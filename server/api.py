@@ -7,7 +7,7 @@ import session_manager
 from session_status import SessionStatus
 
 app = Flask(__name__)
-CORS(app)
+cors = CORS(app)
 socketio = SocketIO(app)
 
 
@@ -23,7 +23,7 @@ def socket_onboarding(data):
 
 @app.route('/init_onboarding', methods=['POST'])
 def init_onboarding_request():
-    # TODO: check who is requesting onboarding session, ip check/zenroom?
+    # TODO: cheget_statusck who is requesting onboarding session, ip check/zenroom?
     # print("Not yet checked who is requesting onboarding session!")
 
     request_type = "onboarding"
