@@ -1,11 +1,10 @@
 from flask import Flask, Response, json, request
 from flask_cors import CORS
-from flask_socketio import SocketIO, join_room
+from flask_socketio import SocketIO, join_room, close_room
 import random
 
 import session_manager
-import data_source
-import validator
+from session_status import SessionStatus
 
 app = Flask(__name__)
 CORS(app)
@@ -22,7 +21,6 @@ def socket_onboarding(data):
     join_room(data['room'])
 
 
-### start ONBOARDING ###
 @app.route('/init_onboarding', methods=['POST'])
 def init_onboarding_request():
     # TODO: check who is requesting onboarding session, ip check/zenroom?
@@ -44,7 +42,7 @@ def attach_public_key():
 
     data = {"public_key": public_key}
 
-    session_status = "CONTINUED_1"
+    session_status = SessionStatus.GOT_PUB_KEY
     session = session_manager.append_session_data(session_id, data, session_status)
     
     socketio.emit('status_update', {'status': session_status}, room=session['id'])
@@ -60,15 +58,16 @@ def attach_encrypted_data():
     session_id = data_json['session_id']
 
     data = {"encrypted": encrypted_data}
-    session_status = "FINALIZED"
+    session_status = SessionStatus.GOT_ENCR_DATA
     session = session_manager.append_session_data(session_id, data, session_status)
 
     socketio.emit('status_update', {'status': session_status}, room=session['id'])
+    
+    # close_room(session['id'])
 
     return json_response({"response": session})
 
 
-### end ONBOARDING ###
 @app.route('/init_disclosure', methods=['POST'])
 def init_disclosure_request():
     data = request.get_data()
@@ -101,56 +100,16 @@ def get_session_status():
     return json_response({'response': response})
 
 
-@app.route('/accept_request', methods=['POST'])
-def accept_request():
-    data = request.get_data()
-    data_json = json.loads(data)
-    session_id = data_json['session_id']
-    username = data_json['username']
-    brp_data = data_source.get_data(username)
+# NOT FUNCTIONAL:
+# @app.route('/accept_request', methods=['POST'])
 
-    attribute_request = session_manager.get_session(session_id)['request']
-    validator_response = validator.check(attribute_request, brp_data)
-
-    random_color = "rgb({0},{1},{2})".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-
-    data = {'request_valid': validator_response, 'request_status': 'ACCEPTED', 'secret': random_color}
-    active_session = session_manager.append_session_data(session_id, data, 'FINALIZED')
-
-    # can not be ended here, since requestor needs to access data still
-    # session_manager.end_session(session_id)
-
-    return json_response({'response': active_session})
-
-
-@app.route('/deny_request', methods=['POST'])
-def deny_request():
-    data = request.get_data()
-    data_json = json.loads(data)
-    session_id = data_json['session_id']
-
-    active_session = session_manager.append_session_data(session_id, {'request_status': 'DENIED'}, 'FINALIZED')
-
-    # can not be ended here, since requestor needs to access data still
-    # session_manager.end_session(session_id)
-
-    return json_response({'response': active_session})
+# NOT FUNCTIONAL:
+# @app.route('/deny_request', methods=['POST'])
 
 
 @app.route('/get_active_sessions', methods=['GET'])
 def get_active_sessions():
     return json_response(session_manager.active_sessions)
-
-
-@app.route('/get_picture_url', methods=['POST'])
-def get_picture_url():
-    data = request.get_data()
-    data_json = json.loads(data)
-    username = data_json['username']
-
-    user_picture_url = data_source.get_picture_url(username)
-
-    return json_response({'response': user_picture_url})
 
 
 def json_response(data):
@@ -164,5 +123,4 @@ def json_response(data):
 
 
 if __name__ == '__main__':
-    socketio.run(app, host='localhost')
-    # app.run(host='0.0.0.0')
+    socketio.run(app, host='0.0.0.0')
