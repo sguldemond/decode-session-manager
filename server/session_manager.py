@@ -14,7 +14,6 @@ def init_session(attribute_request, description):
 
 
 def get_session(session_id):
-    # print(active_sessions)
     for session in active_sessions:
         if session['id'] == session_id:
             if session['status'] == 'INITIALIZED':
@@ -41,7 +40,7 @@ def append_session_data(session_id, data, status):
             session['status'] = status
 
             return session
-    # TODO: return error if session doesn't excist
+    # TODO: return error if session doesn't exist
     # could be helper method used across session manager
 
 
@@ -58,5 +57,4 @@ def end_session(session_id):
     print("Session ended with ID: " + session_to_end['id'])
 
     return "Session ended"
-
 

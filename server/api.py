@@ -7,7 +7,7 @@ import session_manager
 from session_status import SessionStatus
 
 app = Flask(__name__)
-cors = CORS(app)
+CORS(app)
 socketio = SocketIO(app)
 
 
@@ -23,7 +23,7 @@ def socket_onboarding(data):
 
 @app.route('/init_onboarding', methods=['POST'])
 def init_onboarding_request():
-    # TODO: cheget_statusck who is requesting onboarding session, ip check/zenroom?
+    # TODO: check who is requesting onboarding session, ip check/zenroom?
     # print("Not yet checked who is requesting onboarding session!")
 
     request_type = "onboarding"
@@ -42,7 +42,7 @@ def attach_public_key():
 
     data = {"public_key": public_key}
 
-    session_status = SessionStatus.GOT_PUB_KEY
+    session_status = SessionStatus.GOT_PUB_KEY.value
     session = session_manager.append_session_data(session_id, data, session_status)
     
     socketio.emit('status_update', {'status': session_status}, room=session['id'])
@@ -58,7 +58,7 @@ def attach_encrypted_data():
     session_id = data_json['session_id']
 
     data = {"encrypted": encrypted_data}
-    session_status = SessionStatus.GOT_ENCR_DATA
+    session_status = SessionStatus.GOT_ENCR_DATA.value
     session = session_manager.append_session_data(session_id, data, session_status)
 
     socketio.emit('status_update', {'status': session_status}, room=session['id'])
