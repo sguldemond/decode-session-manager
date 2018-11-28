@@ -2,6 +2,7 @@ from flask import Flask, Response, json, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, join_room, close_room
 import random
+import logging
 
 import session_manager
 from session_status import SessionStatus
@@ -9,6 +10,8 @@ from session_status import SessionStatus
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app)
+
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
 
 @app.route('/')
@@ -30,6 +33,9 @@ def init_onboarding_request():
     description = "I want to start onboarding session"
 
     session_id = session_manager.init_session(request_type, description)
+
+    logging.info("New session was initialized [{}]".format(session_id))
+
     return json_response({'session_id': session_id})
 
 
@@ -44,6 +50,8 @@ def attach_public_key():
 
     session_status = SessionStatus.GOT_PUB_KEY.value
     session = session_manager.append_session_data(session_id, data, session_status)
+
+    logging.info("Public key was attached to session [{}]".format(session_id))
     
     socketio.emit('status_update', {'status': session_status}, room=session['id'])
 
@@ -61,6 +69,8 @@ def attach_encrypted_data():
     session_status = SessionStatus.GOT_ENCR_DATA.value
     session = session_manager.append_session_data(session_id, data, session_status)
 
+    logging.info("Encrypted data was attached to session [{}]".format(session_id))
+
     socketio.emit('status_update', {'status': session_status}, room=session['id'])
     
     # close_room(session['id'])
@@ -76,6 +86,9 @@ def init_disclosure_request():
     description = data_json['description']
 
     session_id = session_manager.init_session(attribute_request, description)
+
+    #TODO: logging
+
     return json_response({'session_id': session_id})
 
 
@@ -86,6 +99,9 @@ def get_session():
     session_id = data_json['session_id']
 
     response = session_manager.get_session(session_id)
+
+    #TODO: logging
+
     return json_response({'response': response})
 
 
