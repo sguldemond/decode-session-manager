@@ -21,11 +21,31 @@ def hello():
 
 @socketio.on('join_room')
 def socket_onboarding(data):
-    join_room(data['room'])
+    """
+    Socket endpoint for joining a SocketIO room.
+    The room name is always an active session ID.
+    It can be joined by a MRTD scanner and a single client PWA during the onboarding process.
+    Or by two client PWAs during a disclosure process.
+
+    :param dict data: data attached when emited to this socket endpoint, must contain active session ID
+    """
+    #TODO:
+    # checking if session ID is valid, respond if it isn't, handle response in clients
+    
+    session_id = data['session_id']
+    join_room(session_id)
+
+    logging.info("Room [{0}] joined by client [{1}]".format(session_id, request.sid))
 
 
 @app.route('/init_onboarding', methods=['POST'])
 def init_onboarding_request():
+    """
+    Endpoint called exclusively by the MRTD scanner to initialize a session
+
+    :return: session id of newly created session
+    :rtype: uuid4 string
+    """
     # TODO: check who is requesting onboarding session, ip check/zenroom?
     # print("Not yet checked who is requesting onboarding session!")
 
@@ -41,10 +61,21 @@ def init_onboarding_request():
 
 @app.route("/attach_public_key", methods=['POST'])
 def attach_public_key():
+    """
+    Endpoint called by client PWA in order to attach a public key to a session.
+    Method will emit a status update to notify the MRTD scanner of this change.
+    
+    Request data must contain:
+    - ['session_id']: Session ID of active session to attach public key to
+    - ['public_key']: The public key
+
+    :return: selected session
+    :rtype: session dictionary
+    """
     data = request.get_data()
     data_json = json.loads(data)
-    public_key = data_json['public_key']
     session_id = data_json['session_id']
+    public_key = data_json['public_key']
 
     data = {"public_key": public_key}
 
@@ -60,10 +91,21 @@ def attach_public_key():
 
 @app.route("/attach_encrypted_data", methods=['POST'])
 def attach_encrypted_data():
+    """
+    Endpoint called by MRTD scanner exclusively to attach encrypted data to a session.
+    Method will emit a status update to notify the client PWA of this change.
+
+    Request data must contain:
+    - ['session_id']: Session ID of active session to attach encrypted data to
+    - ['encrypted_data']: The encrypted data
+
+    :return: selected session
+    :rtype: session dictionary
+    """
     data = request.get_data()
     data_json = json.loads(data)
-    encrypted_data = data_json['encrypted_data']
     session_id = data_json['session_id']
+    encrypted_data = data_json['encrypted_data']
 
     data = {"encrypted": encrypted_data}
     session_status = SessionStatus.GOT_ENCR_DATA.value
@@ -78,6 +120,28 @@ def attach_encrypted_data():
     return json_response({"response": session})
 
 
+@app.route('/get_session', methods=['POST'])
+def get_session():
+    """
+    Endpoint called for retrieving entire session, can be called by MRTD scanner and client PWA.
+
+    Request data must contain:
+    - ['session_id']: Session ID of session to be returned
+
+    :return: selected session
+    :rtype: session dictionary
+    """
+    data = request.get_data()
+    data_json = json.loads(data)
+    session_id = data_json['session_id']
+
+    session = session_manager.get_session(session_id)
+
+    logging.info("Returning session [{}]".format(session_id))
+
+    return json_response({'response': session})
+
+
 @app.route('/init_disclosure', methods=['POST'])
 def init_disclosure_request():
     data = request.get_data()
@@ -90,19 +154,6 @@ def init_disclosure_request():
     #TODO: logging
 
     return json_response({'session_id': session_id})
-
-
-@app.route('/get_session', methods=['POST'])
-def get_session():
-    data = request.get_data()
-    data_json = json.loads(data)
-    session_id = data_json['session_id']
-
-    response = session_manager.get_session(session_id)
-
-    #TODO: logging
-
-    return json_response({'response': response})
 
 
 @app.route('/get_session_status', methods=['POST'])
