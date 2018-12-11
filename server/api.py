@@ -186,14 +186,16 @@ def deny_request():
     data_json = json.loads(data)
     session_id = data_json['session_id']
 
-    status = "DENIED"
-    session = session_manager.change_status(session_id, status)
+    denied_status = "DENIED"
+    session = session_manager.end_session(session_id)
     if session == None:
-        response = "SESSION_ID_NOT_VALID"
+        response = "INVALID"
         return json_response({'response': response})
 
-    socketio.emit('status_update', {'status': session['status']}, room=session['id'])
-    
+    logging.info("Disclosure request denied [{}]".format(session['id']))
+
+    socketio.emit('status_update', {'status': denied_status}, room=session['id'])
+
     return json_response({'response': session['id']})
     
 @app.route('/get_active_sessions', methods=['GET'])
