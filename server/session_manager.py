@@ -1,4 +1,5 @@
 from uuid import uuid4
+import logging
 
 active_sessions = []
 
@@ -32,6 +33,14 @@ def get_session_status(session_id):
 
     return "Session not found"
 
+def change_status(session_id, status):
+    for session in active_sessions:
+        if session['id'] == session_id:
+            session['status'] = status
+
+            return session
+
+    return None
 
 def append_session_data(session_id, data, status):
     for session in active_sessions:
@@ -54,7 +63,7 @@ def end_session(session_id):
         return "Session not found"
 
     active_sessions.remove(session_to_end)
-    print("Session ended with ID: " + session_to_end['id'])
+    logging.info("Session ended [{}]".format(session_to_end['id']))
 
     return "Session ended"
 

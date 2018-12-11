@@ -1,6 +1,6 @@
 from flask import Flask, Response, json, request
 from flask_cors import CORS
-from flask_socketio import SocketIO, join_room, close_room
+from flask_socketio import SocketIO, join_room, close_room, leave_room
 import random
 import logging
 
@@ -36,6 +36,14 @@ def socket_onboarding(data):
     join_room(session_id)
 
     logging.info("Room [{0}] joined by client [{1}]".format(session_id, request.sid))
+
+@socketio.on('close_room')
+def socket_cancel(data):
+    session_id = data['session_id']
+    close_room(session_id)
+    logging.info("Client [{0}] closed room [{1}]".format(request.sid, session_id))
+
+    session_manager.end_session(session_id)
 
 
 @app.route('/init_onboarding', methods=['POST'])
@@ -139,6 +147,8 @@ def get_session():
 
     logging.info("Returning session [{}]".format(session_id))
 
+    socketio.emit('status_update', {'status': session['status']}, room=session['id'])
+
     return json_response({'response': session})
 
 
@@ -148,10 +158,10 @@ def init_disclosure_request():
     data_json = json.loads(data)
     attribute_request = data_json['attribute_request']
     description = data_json['description']
-
+    print(attribute_request, description)
     session_id = session_manager.init_session(attribute_request, description)
 
-    #TODO: logging
+    logging.info("New disclosure session was created [{}]".format(session_id))
 
     return json_response({'session_id': session_id})
 
@@ -170,10 +180,22 @@ def get_session_status():
 # NOT FUNCTIONAL:
 # @app.route('/accept_request', methods=['POST'])
 
-# NOT FUNCTIONAL:
-# @app.route('/deny_request', methods=['POST'])
+@app.route('/deny_request', methods=['POST'])
+def deny_request():
+    data = request.get_data()
+    data_json = json.loads(data)
+    session_id = data_json['session_id']
 
+    status = "DENIED"
+    session = session_manager.change_status(session_id, status)
+    if session == None:
+        response = "SESSION_ID_NOT_VALID"
+        return json_response({'response': response})
 
+    socketio.emit('status_update', {'status': session['status']}, room=session['id'])
+    
+    return json_response({'response': session['id']})
+    
 @app.route('/get_active_sessions', methods=['GET'])
 def get_active_sessions():
     return json_response(session_manager.active_sessions)
