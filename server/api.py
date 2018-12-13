@@ -144,7 +144,9 @@ def get_session():
     session_id = data_json['session_id']
 
     session = session_manager.get_session(session_id)
-
+    if session['status'] == "GOT_ENCR_DATA":
+        session = session_manager.change_status(session_id, "FINALIZED")
+    
     logging.info("Returning session [{}]".format(session_id))
 
     socketio.emit('status_update', {'status': session['status']}, room=session['id'])
@@ -158,7 +160,6 @@ def init_disclosure_request():
     data_json = json.loads(data)
     attribute_request = data_json['attribute_request']
     description = data_json['description']
-    print(attribute_request, description)
     session_id = session_manager.init_session(attribute_request, description)
 
     logging.info("New disclosure session was created [{}]".format(session_id))
@@ -177,8 +178,27 @@ def get_session_status():
     return json_response({'response': response})
 
 
-# NOT FUNCTIONAL:
-# @app.route('/accept_request', methods=['POST'])
+@app.route('/accept_request', methods=['POST'])
+def accept_request():
+    data = request.get_data()
+    data_json = json.loads(data)
+    session_id = data_json['session_id']
+    request_response = data_json['request_response']
+
+    logging.info("Disclosure request accepted [{}]".format(session_id))
+    status = 'FINALIZED'
+
+    session = None
+    if request_response == "VALID":
+        random_color = "rgb({0},{1},{2})".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        session = session_manager.append_session_data(session_id, {'request_status': request_response, 'secret': random_color}, status)
+
+    elif request_response == "INVALID":
+        session = session_manager.append_session_data(session_id, {'request_status': request_response}, status)
+
+    socketio.emit('status_update', {'status': status}, room=session_id)
+    
+    return json_response({'response': session})
 
 @app.route('/deny_request', methods=['POST'])
 def deny_request():
@@ -186,17 +206,19 @@ def deny_request():
     data_json = json.loads(data)
     session_id = data_json['session_id']
 
-    denied_status = "DENIED"
-    session = session_manager.end_session(session_id)
-    if session == None:
-        response = "INVALID"
-        return json_response({'response': response})
+    # session = session_manager.end_session(session_id)
+    # if session == None:
+    #     response = "INVALID"
+    #     return json_response({'response': response})
 
-    logging.info("Disclosure request denied [{}]".format(session['id']))
+    logging.info("Disclosure request denied [{}]".format(session_id))
 
-    socketio.emit('status_update', {'status': denied_status}, room=session['id'])
+    status = 'FINALIZED'
+    session_manager.append_session_data(session_id, {'request_status': 'DENIED'}, status)
 
-    return json_response({'response': session['id']})
+    socketio.emit('status_update', {'status': status}, room=session_id)
+
+    return json_response({'response': session_id})
     
 @app.route('/get_active_sessions', methods=['GET'])
 def get_active_sessions():
