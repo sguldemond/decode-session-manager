@@ -206,19 +206,14 @@ def deny_request():
     data_json = json.loads(data)
     session_id = data_json['session_id']
 
-    # session = session_manager.end_session(session_id)
-    # if session == None:
-    #     response = "INVALID"
-    #     return json_response({'response': response})
-
     logging.info("Disclosure request denied [{}]".format(session_id))
 
     status = 'FINALIZED'
-    session_manager.append_session_data(session_id, {'request_status': 'DENIED'}, status)
+    session = session_manager.append_session_data(session_id, {'request_status': 'DENIED'}, status)
 
     socketio.emit('status_update', {'status': status}, room=session_id)
 
-    return json_response({'response': session_id})
+    return json_response({'response': session})
     
 @app.route('/get_active_sessions', methods=['GET'])
 def get_active_sessions():
@@ -236,4 +231,6 @@ def json_response(data):
 
 
 if __name__ == '__main__':
+    logging.info("Server started")
     socketio.run(app, host='0.0.0.0')
+    logging.info("Server shutting down")
