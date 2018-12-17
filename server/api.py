@@ -149,6 +149,7 @@ def get_session():
         session = session_manager.change_status(session_id, "FINALIZED")
 
     logging.info("Returning session [{}]".format(session_id))
+    logging.info("RETURN SESSION: {}".format(session))
 
     print("SESSION BEFORE EMIT STATUS UPDATE", session)
     socketio.emit('status_update', {'status': session['status']}, room=session['id'])
@@ -234,5 +235,5 @@ def json_response(data):
 
 if __name__ == '__main__':
     logging.info("Server started")
-    socketio.run(app, host='0.0.0.0', debug=True)
+    socketio.run(app, host='0.0.0.0', debug=False)
     logging.info("Server shutting down")
