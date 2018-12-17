@@ -60,11 +60,12 @@ def init_onboarding_request():
     request_type = "onboarding"
     description = "I want to start onboarding session"
 
-    session_id = session_manager.init_session(request_type, description)
+    new_session = session_manager.init_session(request_type, description)
 
-    logging.info("New session was initialized [{}]".format(session_id))
+    logging.info("New session was initialized [{}]".format(new_session['id']))
+    print("NEW SESSION:", new_session)
 
-    return json_response({'session_id': session_id})
+    return json_response({'session_id': new_session['id']})
 
 
 @app.route("/attach_public_key", methods=['POST'])
@@ -142,13 +143,14 @@ def get_session():
     data = request.get_data()
     data_json = json.loads(data)
     session_id = data_json['session_id']
-
+    
     session = session_manager.get_session(session_id)
     if session['status'] == "GOT_ENCR_DATA":
         session = session_manager.change_status(session_id, "FINALIZED")
-    
+
     logging.info("Returning session [{}]".format(session_id))
 
+    print("SESSION BEFORE EMIT STATUS UPDATE", session)
     socketio.emit('status_update', {'status': session['status']}, room=session['id'])
 
     return json_response({'response': session})
@@ -232,5 +234,5 @@ def json_response(data):
 
 if __name__ == '__main__':
     logging.info("Server started")
-    socketio.run(app, host='0.0.0.0')
+    socketio.run(app, host='0.0.0.0', debug=True)
     logging.info("Server shutting down")

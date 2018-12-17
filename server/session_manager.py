@@ -11,7 +11,7 @@ def init_session(attribute_request, description):
                    'data': None,
                    'status': 'INITIALIZED'}
     active_sessions.append(new_session)
-    return new_session_id
+    return new_session
 
 
 def get_session(session_id):
