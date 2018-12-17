@@ -63,7 +63,7 @@ def init_onboarding_request():
     new_session = session_manager.init_session(request_type, description)
 
     logging.info("New session was initialized [{}]".format(new_session['id']))
-    logging.info("NEW SESSION:", new_session)
+    logging.info("NEW SESSION: {}".format(new_session))
 
     return json_response({'session_id': new_session['id']})
 
