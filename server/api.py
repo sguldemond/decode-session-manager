@@ -1,22 +1,23 @@
+import logging
+import random
+
 from flask import Flask, Response, json, request
 from flask_cors import CORS
-from flask_socketio import SocketIO, join_room, close_room, leave_room
-import random
-import logging
+from flask_socketio import SocketIO, close_room, join_room, leave_room
 
 import session_manager
 from session_status import SessionStatus
 
 app = Flask(__name__)
-CORS(app)
 socketio = SocketIO(app)
+CORS(app)
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
 
 @app.route('/')
 def hello():
-    return "Hello Decode!"
+    return "Hello from Decode!"
 
 
 @socketio.on('join_room')
@@ -163,11 +164,11 @@ def init_disclosure_request():
     data_json = json.loads(data)
     attribute_request = data_json['attribute_request']
     description = data_json['description']
-    session_id = session_manager.init_session(attribute_request, description)
+    new_session = session_manager.init_session(attribute_request, description)
 
-    logging.info("New disclosure session was created [{}]".format(session_id))
+    logging.info("New disclosure session was created [{}]".format(new_session['id']))
 
-    return json_response({'session_id': session_id})
+    return json_response({'session_id': new_session['id']})
 
 
 @app.route('/get_session_status', methods=['POST'])
