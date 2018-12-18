@@ -175,10 +175,14 @@ def init_disclosure_request():
 def get_session_status():
     data = request.get_data()
     data_json = json.loads(data)
+    print("DATA_JSON:", data_json)
     session_id = data_json['session_id']
 
     # TODO: rename 'response' > 'status'
     response = session_manager.get_session_status(session_id)
+
+    logging.info("Status [{0}] got from [{1}]".format(response, session_id))
+
     return json_response({'response': response})
 
 
