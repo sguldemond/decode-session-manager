@@ -143,7 +143,7 @@ def get_session_status():
 
     # TODO: rename 'response' > 'status'
     with lock:
-        response = session_manager.get_session_status(session_id)
+    response = session_manager.get_session_status(session_id)
 
     logging.info("Status [{0}] with id [{1}]".format(response, session_id))
 
