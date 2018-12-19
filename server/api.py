@@ -1,5 +1,6 @@
 import logging
 import random
+from threading import Lock
 
 from flask import Flask, Response, json, request
 from flask_cors import CORS
@@ -9,6 +10,7 @@ from session_status import SessionStatus
 
 app = Flask(__name__)
 CORS(app)
+lock = Lock() # because of race condition caused by WSGI in prod env, https://stackoverflow.com/questions/10181706/working-with-a-global-singleton-in-flask-wsgi-do-i-have-to-worry-about-race-c
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
@@ -136,13 +138,14 @@ def init_disclosure_request():
 def get_session_status():
     data = request.get_data()
     data_json = json.loads(data)
-    # print("DATA_JSON:", data_json)
+    print("DATA_JSON:", data_json)
     session_id = data_json['session_id']
 
     # TODO: rename 'response' > 'status'
-    response = session_manager.get_session_status(session_id)
+    with lock:
+        response = session_manager.get_session_status(session_id)
 
-    logging.info("Status [{0}] got from [{1}]".format(response, session_id))
+    logging.info("Status [{0}] with id [{1}]".format(response, session_id))
 
     return json_response({'response': response})
 
