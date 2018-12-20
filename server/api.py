@@ -4,6 +4,7 @@ from threading import Lock
 
 from flask import Flask, Response, json, request
 from flask_cors import CORS
+from randomcolor import RandomColor # port of: https://github.com/davidmerfield/randomColor
 
 import session_manager
 from session_status import SessionStatus
@@ -143,7 +144,7 @@ def get_session_status():
 
     # TODO: rename 'response' > 'status'
     with lock:
-    response = session_manager.get_session_status(session_id)
+        response = session_manager.get_session_status(session_id)
 
     logging.info("Status [{0}] with id [{1}]".format(response, session_id))
 
@@ -162,7 +163,9 @@ def accept_request():
 
     session = None
     if request_response == "VALID":
-        random_color = "rgb({0},{1},{2})".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        # random_color = "rgb({0},{1},{2})".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        rand_color = RandomColor()
+        random_color = rand_color.generate()
         session = session_manager.append_session_data(session_id, {'request_status': request_response, 'secret': random_color}, status)
 
     elif request_response == "INVALID":

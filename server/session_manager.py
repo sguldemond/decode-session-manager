@@ -2,7 +2,6 @@ from uuid import uuid4
 import logging
 
 active_sessions = []
-lock = Lock() # because of race condition caused by WSGI in prod env, https://stackoverflow.com/questions/10181706/working-with-a-global-singleton-in-flask-wsgi-do-i-have-to-worry-about-race-c
 
 def init_session(attribute_request, description):
     new_session_id = str(uuid4())
