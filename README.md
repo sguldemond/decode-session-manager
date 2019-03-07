@@ -1,6 +1,6 @@
 # Decode Session Manager
 
-This Session Manager is part of the Decode Amsterdam project. For more info check out the [Decode Amsterdam]() repository.
+This Session Manager is part of the Decode Amsterdam project. For more info check out the [Decode Amsterdam](https://github.com/Vegter/decode/tree/publication) repository.
 
 ## Project Setup
 
